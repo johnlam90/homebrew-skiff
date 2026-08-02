@@ -1,0 +1,30 @@
+# Mirrors Formula/skiff.rb from the main skiff repo, where GoReleaser
+# writes it on every release. Pull-based on a schedule so no cross-repo
+# token is needed anywhere — the default GITHUB_TOKEN of THIS repo can
+# commit to itself, and the main repo is public to read.
+name: Sync formula
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Fetch formula from johnlam90/skiff
+        run: |
+          mkdir -p Formula
+          curl -fsSL -o Formula/skiff.rb \
+            https://raw.githubusercontent.com/johnlam90/skiff/main/Formula/skiff.rb
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          if ! git diff --quiet; then
+            git add Formula/skiff.rb
+            git commit -m "Sync skiff formula from main repo"
+            git push
+          fi
